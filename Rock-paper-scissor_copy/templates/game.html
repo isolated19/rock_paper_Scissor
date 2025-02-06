@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stone Paper Scissors</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; background: #f4f4f4; }
+        .game-container { display: flex; justify-content: center; gap: 50px; margin-top: 50px; }
+        .player { padding: 20px; background: white; border-radius: 10px; box-shadow: 2px 2px 10px gray; }
+        .choice { font-size: 2rem; margin: 10px 0; }
+        .score { font-weight: bold; font-size: 1.2rem; }
+        .btn { padding: 10px 20px; margin-top: 10px; cursor: pointer; border: none; border-radius: 5px; }
+        .play-btn { background: #2ed573; color: white; }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+    <h1>Round <span id="round">1</span>/5</h1>
+
+    <form action="/update_score" method="post">
+        <div class="game-container">
+            <div class="player">
+                <h2>{{ player1 }}</h2>
+                <div class="choice" id="choice1">❔</div>
+                <button class="btn play-btn" onclick="playRound('player1')">Play</button>
+                <div class="score">Score: <span id="score1">0</span></div>
+            </div>
+    
+            <div class="player">
+                <h2>{{ player2 }}</h2>
+                <div class="choice" id="choice2">❔</div>
+                <button class="btn play-btn" onclick="playRound('player2')">Play</button>
+                <div class="score">Score: <span id="score2">0</span></div>
+            </div>
+        </div>
+    </form>
+
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Round Result Modal -->
+    <div class="modal" id="resultModal">
+        <h2 id="resultText"></h2>
+    </div>
+
+    <!-- Winner Modal -->
+    <div class="modal" id="winnerModal">
+        <h2 id="winnerText"></h2>
+        <button class="btn" onclick="window.location.href='leaderboard.html'">Leaderboard</button>
+        <button class="btn" onclick="restartGame()">Restart</button>
+    </div>
+
+    <script>
+        let round = 1, score1 = 0, score2 = 0, choices = { player1: null, player2: null };
+
+        function getRandomChoice() {
+            return ['✊', '✋', '✌️'][Math.floor(Math.random() * 3)];
+        }
+
+        function playRound(player) {
+            choices[player] = getRandomChoice();
+            document.getElementById(player === "player1" ? "choice1" : "choice2").textContent = choices[player];
+
+            if (choices.player1 && choices.player2) {
+                setTimeout(determineWinner, 1000);
+            }
+        }
+
+        function determineWinner() {
+            const [p1, p2] = [choices.player1, choices.player2];
+            let result = "It's a tie!";
+            if ((p1 === '✊' && p2 === '✌️') || (p1 === '✋' && p2 === '✊') || (p1 === '✌️' && p2 === '✋')) {
+                result = "{{ player1 }} wins!";
+                score1++;
+            } else if (p1 !== p2) {
+                result = "{{ player2 }} wins!";
+                score2++;
+            }
+
+            updateScores();
+            showModal(result, "resultModal");
+
+            if (++round > 5) setTimeout(showWinner, 2000);
+            else setTimeout(resetRound, 2000);
+        }
+
+        function updateScores() {
+            document.getElementById('score1').textContent = score1;
+            document.getElementById('score2').textContent = score2;
+            document.getElementById('round').textContent = round;
+        }
+
+        function resetRound() {
+            choices = { player1: null, player2: null };
+            document.getElementById("choice1").textContent = "❔";
+            document.getElementById("choice2").textContent = "❔";
+        }
+
+        function showWinner() {
+            let winnerMsg = score1 === score2 ? "It's a tie!" : (score1 > score2 ? "{{ player1 }} Wins!" : "{{ player2 }} Wins!");
+            showModal(winnerMsg, "winnerModal");
+        }
+
+        function showModal(message, modalId) {
+            document.getElementById(modalId === "resultModal" ? "resultText" : "winnerText").textContent = message;
+            document.getElementById("overlay").style.display = "block";
+            document.getElementById(modalId).style.display = "block";
+            setTimeout(() => {
+                document.getElementById("overlay").style.display = "none";
+                document.getElementById(modalId).style.display = "none";
+            }, 1000);
+        }
+
+        function restartGame() {
+            location.reload();
+        }
+    </script>
+</body>
+</html>
